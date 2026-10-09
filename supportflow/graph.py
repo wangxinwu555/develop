@@ -1,4 +1,4 @@
-"""第 4 层：真正的 LangGraph 循环、持久化和人工确认。
+"""LangGraph Agent 执行、状态持久化与人工确认。
 
 START -> agent -> tools -> agent ... -> END
 request_exchange 在 tools 节点 interrupt，恢复后才调用 create_ticket。
@@ -7,7 +7,7 @@ request_exchange 在 tools 节点 interrupt，恢复后才调用 create_ticket�
 import json
 import logging
 import operator
-import sqlit
+import sqlite3
 import time
 from typing import Annotated, TypedDict
 

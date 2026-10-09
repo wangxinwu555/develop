@@ -37,7 +37,7 @@
   <header><div><h1>SupportFlow</h1><div class="sub">售后咨询 · 订单查询 · 换货申请</div></div><span id="mode" class="tag">连接中</span></header>
   <main>
     <section class="panel">
-      <div class="panel-head"><h2>售后服务助手</h2><div><select id="identity" aria-label="演示用户"><option value="demo-alice">Alice</option><option value="demo-bob">Bob</option></select> <button id="new">新会话</button></div></div>
+      <div class="panel-head"><h2>售后服务助手</h2><div><select id="identity" aria-label="沙箱账号"><option value="demo-alice">Alice</option><option value="demo-bob">Bob</option></select> <button id="new">新会话</button></div></div>
       <div id="chat" aria-live="polite"></div>
       <div id="approval" hidden><strong>请确认换货申请</strong><p id="approval-text"></p><div class="row"><button id="cancel">取消申请</button><button id="confirm" class="primary">确认提交</button></div></div>
       <div id="error" role="alert"></div>
@@ -45,13 +45,13 @@
       <div class="suggestions"><button data-prompt="换货期限是多少？">查询政策</button><button data-prompt="帮我查询 O1001 的订单">查询订单</button><button data-prompt="O1001 的耳机右耳没声音，帮我申请换货">申请换货</button><button data-prompt="O1002 的音箱坏了，帮我申请换货">超过期限</button></div>
     </section>
     <aside class="side">
-      <section class="panel"><div class="panel-head"><h2>演示说明</h2></div><div class="body"><p class="note">这是模拟商店，确认后只创建本地工单。规则演示模式不调用大模型；真实模型模式需要配置 API。</p><div class="sample">Alice：O1001 可申请，O1002 已超期，O1003 未签收。<br>Bob：O2001 可申请。<br>新会话不会删除已有工单。</div></div></section>
+      <section class="panel"><div class="panel-head"><h2>服务说明</h2></div><div class="body"><p class="note">支持售后政策咨询、订单查询和质量问题换货。提交申请前需要你的确认，受理后仍需审核。</p><div class="sample">当前为沙箱环境，订单与工单均为模拟数据。<br>新会话会保留已有工单。</div></div></section>
       <section class="panel"><div class="panel-head"><h2>执行记录</h2><span id="tokens" class="sub">0 tokens</span></div><div id="trace" class="body"><p class="note">发送消息后可查看工具路径与执行结果。</p></div></section>
       <section class="panel"><div class="panel-head"><h2>政策依据</h2></div><div id="sources" class="body"><p class="note">检索到的政策将在这里显示。</p></div></section>
       <section class="panel"><div class="panel-head"><h2>我的工单</h2><button id="refresh">刷新</button></div><div id="tickets" class="body"></div></section>
     </aside>
   </main>
-  <footer>学习项目 · 演示身份令牌公开，仅用于本地模拟数据 · 申请受理不代表换货审核通过</footer>
+  <footer>SupportFlow · 沙箱环境 · 申请受理不代表换货审核通过</footer>
   <script>
     const $ = id => document.getElementById(id);
     let session = '', pending = null, busy = false, taskStatus = 'completed';
@@ -115,7 +115,7 @@
     $('new').onclick=()=>run(()=>start(true));$('refresh').onclick=()=>run(tickets);
     $('identity').onchange=()=>{localStorage.setItem('supportflow.identity',$('identity').value);run(()=>start());};
     document.querySelectorAll('[data-prompt]').forEach(button=>button.onclick=()=>{$('message').value=button.dataset.prompt;$('message').focus();});
-    run(async()=>{const h=await request('/health');$('mode').textContent=(h.agent_mode==='demo'?'规则演示':'真实模型')+' · '+(h.embedding_provider==='demo'?'演示向量':'模型向量')+' · Chroma';await start();});
+    run(async()=>{const h=await request('/health');$('mode').textContent=h.agent_mode==='demo'?'离线模式':'AI 助手在线';await start();});
   </script>
 </body>
 </html>

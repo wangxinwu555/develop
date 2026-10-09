@@ -1,7 +1,6 @@
 """运行：python -m scripts.demo。独立演示数据，不改变网页使用的订单。"""
 
 import json
-from pathlib import Path
 from uuid import uuid4
 
 from supportflow.config import ROOT, Settings
@@ -10,11 +9,13 @@ from supportflow.service import AgentService
 
 
 def main():
+    demo_dir = ROOT / "runtime/demos" / uuid4().hex
     settings = Settings(
+        _env_file=None,
         agent_mode="demo",
         embedding_provider="demo",
-        knowledge_dir=ROOT / "runtime/knowledge",
-        runtime_dir=Path("runtime") / "demos" / uuid4().hex,
+        knowledge_dir=demo_dir / "knowledge",
+        runtime_dir=demo_dir,
     )
     build_index(settings)
     service = AgentService(settings)

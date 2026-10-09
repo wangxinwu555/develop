@@ -8,6 +8,11 @@ __pycache__/
 *.pyc
 *.egg-info/
 .env
+.env.*
+!.env.example
+*.log
+*.pem
+*.key
 runtime/
 *.sqlite*
 evals/results*.json

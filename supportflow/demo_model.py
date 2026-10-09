@@ -1,7 +1,7 @@
 """无 API Key 的规则驱动演示模型。不是 LLM，不用于证明模型效果。
 
 它返回标准 AIMessage/tool_calls，以便复用并测试真实 LangGraph 执行流程。
-真实模型实现位于 graph.py；本文件方便观察每一步的输入和输出。
+真实模型实现位于 graph.py；本模块用于离线行为回归。
 """
 
 import json
