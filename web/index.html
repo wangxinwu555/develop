@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SupportFlow · 售后服务助手</title>
+  <style>
+    :root {color-scheme:light;--ink:#192c3d;--muted:#66798a;--blue:#165dce;--line:#dde5ee;--bg:#f3f6fa}
+    * {box-sizing:border-box} body {margin:0;background:var(--bg);font:15px/1.65 system-ui,"Microsoft YaHei",sans-serif;color:var(--ink)}
+    header {background:#fff;border-bottom:1px solid var(--line);padding:22px max(24px,calc((100vw - 1200px)/2));display:flex;justify-content:space-between;gap:20px;align-items:center}
+    h1 {font-size:24px;margin:0;letter-spacing:-.6px} .sub {font-size:13px;color:var(--muted)}
+    .tag {background:#eaf1ff;color:#174da5;border-radius:20px;padding:5px 12px;font-size:12px;display:inline-block}
+    main {max-width:1200px;margin:28px auto;padding:0 24px;display:grid;grid-template-columns:minmax(0,1.7fr) minmax(300px,1fr);gap:24px}
+    .panel {background:#fff;border:1px solid var(--line);border-radius:14px;overflow:hidden}
+    .panel-head {padding:18px 22px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;gap:12px}
+    h2 {font-size:16px;margin:0} button,select,textarea {font:inherit} button {cursor:pointer;border:1px solid var(--line);border-radius:8px;padding:8px 13px;background:#fff;color:var(--ink)}
+    button:hover {background:#f0f5ff} button:disabled {opacity:.5;cursor:default} .primary {background:var(--blue);color:#fff;border-color:var(--blue)} .primary:hover {background:#104da9}
+    select {border:1px solid var(--line);border-radius:8px;padding:6px;background:#fff;color:var(--ink)}
+    #chat {height:460px;overflow-y:auto;padding:22px;display:flex;flex-direction:column;gap:15px}
+    .message {max-width:90%;padding:12px 16px;border-radius:12px;white-space:pre-wrap;overflow-wrap:anywhere;background:#f1f5f9;align-self:flex-start}
+    .message.user {background:#165dce;color:#fff;align-self:flex-end}.message.system {background:#fff5dc;color:#765400;font-size:13px;max-width:100%}
+    .composer {padding:18px;border-top:1px solid var(--line)} textarea {width:100%;min-height:82px;border:1px solid var(--line);border-radius:8px;resize:vertical;padding:10px;color:var(--ink)}
+    .row {display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:12px}.row .primary {margin-left:auto}
+    .suggestions {padding:0 18px 16px;display:flex;gap:8px;flex-wrap:wrap}.suggestions button {font-size:12px}
+    .side {display:flex;flex-direction:column;gap:20px}.body {padding:18px 22px}
+    .note {color:var(--muted);font-size:13px;margin:0} .sample {margin-top:12px;font-size:13px;border-top:1px solid var(--line);padding-top:10px}
+    #approval {margin:0 18px 18px;background:#fff8e8;border:1px solid #edd3a0;border-radius:10px;padding:16px} #approval p {margin:8px 0;white-space:pre-wrap;overflow-wrap:anywhere}
+    #error {color:#a02b36;padding:0 18px 12px;white-space:pre-wrap;font-size:13px} [hidden] {display:none!important}
+    .event {border-left:2px solid #97b9eb;padding:4px 0 4px 12px;margin:12px 0;font-size:13px}.event small {display:block;color:var(--muted)}
+    details {margin-top:8px;font-size:13px} pre {background:#f4f6f9;border-radius:7px;padding:10px;white-space:pre-wrap;overflow-wrap:anywhere;font-size:12px;max-height:230px;overflow:auto}
+    .source,.ticket {padding:12px 0;border-bottom:1px solid var(--line);font-size:13px}.source:last-child,.ticket:last-child {border:0}
+    footer {max-width:1200px;margin:0 auto 24px;padding:0 24px;font-size:12px;color:var(--muted)}
+    @media(max-width:850px){main{grid-template-columns:1fr}header{align-items:flex-start}#chat{height:400px}.side{gap:16px}}
+  </style>
+</head>
+<body>
+  <header><div><h1>SupportFlow</h1><div class="sub">售后咨询 · 订单查询 · 换货申请</div></div><span id="mode" class="tag">连接中</span></header>
+  <main>
+    <section class="panel">
+      <div class="panel-head"><h2>售后服务助手</h2><div><select id="identity" aria-label="演示用户"><option value="demo-alice">Alice</option><option value="demo-bob">Bob</option></select> <button id="new">新会话</button></div></div>
+      <div id="chat" aria-live="polite"></div>
+      <div id="approval" hidden><strong>请确认换货申请</strong><p id="approval-text"></p><div class="row"><button id="cancel">取消申请</button><button id="confirm" class="primary">确认提交</button></div></div>
+      <div id="error" role="alert"></div>
+      <div class="composer"><textarea id="message" placeholder="例如：O1001 的耳机右耳没声音，帮我申请换货。" aria-label="输入消息"></textarea><div class="row"><span id="status" class="sub">准备就绪</span><button id="retry" hidden>恢复任务</button><button id="send" class="primary">发送消息</button></div></div>
+      <div class="suggestions"><button data-prompt="换货期限是多少？">查询政策</button><button data-prompt="帮我查询 O1001 的订单">查询订单</button><button data-prompt="O1001 的耳机右耳没声音，帮我申请换货">申请换货</button><button data-prompt="O1002 的音箱坏了，帮我申请换货">超过期限</button></div>
+    </section>
+    <aside class="side">
+      <section class="panel"><div class="panel-head"><h2>演示说明</h2></div><div class="body"><p class="note">这是模拟商店，确认后只创建本地工单。规则演示模式不调用大模型；真实模型模式需要配置 API。</p><div class="sample">Alice：O1001 可申请，O1002 已超期，O1003 未签收。<br>Bob：O2001 可申请。<br>新会话不会删除已有工单。</div></div></section>
+      <section class="panel"><div class="panel-head"><h2>执行记录</h2><span id="tokens" class="sub">0 tokens</span></div><div id="trace" class="body"><p class="note">发送消息后可查看工具路径与执行结果。</p></div></section>
+      <section class="panel"><div class="panel-head"><h2>政策依据</h2></div><div id="sources" class="body"><p class="note">检索到的政策将在这里显示。</p></div></section>
+      <section class="panel"><div class="panel-head"><h2>我的工单</h2><button id="refresh">刷新</button></div><div id="tickets" class="body"></div></section>
+    </aside>
+  </main>
+  <footer>学习项目 · 演示身份令牌公开，仅用于本地模拟数据 · 申请受理不代表换货审核通过</footer>
+  <script>
+    const $ = id => document.getElementById(id);
+    let session = '', pending = null, busy = false, taskStatus = 'completed';
+    $('identity').value = localStorage.getItem('supportflow.identity') || 'demo-alice';
+    const key = () => 'supportflow.session.' + $('identity').value;
+    const make = (tag, text, cls) => { const node = document.createElement(tag); node.textContent = text; if(cls) node.className = cls; return node; };
+    function message(text, role='assistant') {if(!text) return; $('chat').append(make('div', text, 'message '+role)); $('chat').scrollTop = $('chat').scrollHeight;}
+    function controls() {
+      for(const id of ['new','identity','confirm','cancel','refresh','retry']) $(id).disabled = busy;
+      $('send').disabled = busy || taskStatus !== 'completed'; $('message').disabled = busy || taskStatus !== 'completed';
+      document.querySelectorAll('[data-prompt]').forEach(b => b.disabled = busy || taskStatus !== 'completed');
+    }
+    async function request(path, method='GET', body) {
+      const res = await fetch(path, {method, headers:{'Content-Type':'application/json','X-Demo-Token':$('identity').value}, ...(body === undefined ? {} : {body:JSON.stringify(body)})});
+      const data = await res.json(); if(!res.ok) throw new Error(data.message || (typeof data.detail === 'string' ? data.detail : JSON.stringify(data.detail)) || '请求失败'); return data;
+    }
+    function render(data, showReply=true) {
+      pending = data.approval; taskStatus = data.status;
+      if(showReply) message(data.reply);
+      $('approval').hidden = !pending;
+      $('approval-text').textContent = pending ? `订单：${pending.order_id}\n问题：${pending.reason}\n${pending.notice}` : '';
+      $('status').textContent = pending ? '等待你确认' : data.status === 'retry_required' ? '任务失败，可以恢复' : '准备就绪';
+      $('retry').hidden = data.status !== 'retry_required';
+      $('tokens').textContent = data.mode === 'demo' ? '规则模式 · 0 tokens' : `${data.usage.total_tokens} tokens`;
+      $('trace').replaceChildren();
+      for(const e of data.events) {
+        const node = make('div', e.tool || 'Agent 决策', 'event');
+        node.append(make('small', `${e.outcome} · ${e.duration_ms} ms${e.selected_tools?.length ? ' · 选择 '+e.selected_tools.join(', ') : ''}`));
+        if(e.result) {const d=document.createElement('details');d.append(make('summary','查看工具结果'));d.append(make('pre',JSON.stringify(e.result,null,2)));node.append(d);}
+        $('trace').append(node);
+      }
+      $('sources').replaceChildren();
+      for(const s of data.references) {const node=make('div', `${s.title} [${s.id}]`, 'source'); if(s.source)node.append(make('p',`${s.source} · 第 ${s.page} 页 · 相似度 ${s.score}`, 'note')); const d=document.createElement('details');d.append(make('summary','查看检索文本块'));d.append(make('p',s.text));node.append(d);$('sources').append(node);}
+      if(!data.references.length) $('sources').append(make('p','本轮没有政策检索结果。','note'));
+      controls();
+    }
+    async function tickets() {
+      const list=await request('/api/tickets');$('tickets').replaceChildren();
+      if(!list.length) $('tickets').append(make('p','暂无工单。','note'));
+      for(const t of list) $('tickets').append(make('div', `${t.id}\n订单 ${t.order_id} · ${t.status}\n${t.reason}`, 'ticket'));
+    }
+    async function run(action) {
+      if(busy) return; busy=true; $('error').textContent=''; controls();
+      try {await action();}
+      catch(e) {
+        $('error').textContent=e.message;
+        if(session) {try {render(await request(`/api/sessions/${session}`),false);} catch(_) {}}
+      } finally {busy=false;controls();}
+    }
+    async function start(force=false) {
+      $('chat').replaceChildren(); session=force ? '' : localStorage.getItem(key()) || '';
+      if(session) {try {render(await request(`/api/sessions/${session}`));} catch(_) {session='';}}
+      if(!session) {session=(await request('/api/sessions','POST')).session_id;localStorage.setItem(key(),session);render(await request(`/api/sessions/${session}`),false);}
+      if(!$('chat').children.length) message('你好，我可以查询订单、解释售后政策，并在你确认后创建换货工单。');
+      await tickets();
+    }
+    $('send').onclick=()=>run(async()=>{const text=$('message').value.trim();if(!text) return;message(text,'user');$('message').value='';render(await request(`/api/sessions/${session}/messages`,'POST',{message:text}));await tickets();});
+    $('message').onkeydown=e=>{if(e.key==='Enter'&&!e.shiftKey&&!e.isComposing){e.preventDefault();$('send').click();}};
+    for(const [id, approved] of [['confirm',true],['cancel',false]]) $(id).onclick=()=>run(async()=>{if(!pending) return;render(await request(`/api/sessions/${session}/approval`,'POST',{approval_id:pending.approval_id,approved}));await tickets();});
+    $('retry').onclick=()=>run(async()=>{render(await request(`/api/sessions/${session}/retry`,'POST'));await tickets();});
+    $('new').onclick=()=>run(()=>start(true));$('refresh').onclick=()=>run(tickets);
+    $('identity').onchange=()=>{localStorage.setItem('supportflow.identity',$('identity').value);run(()=>start());};
+    document.querySelectorAll('[data-prompt]').forEach(button=>button.onclick=()=>{$('message').value=button.dataset.prompt;$('message').focus();});
+    run(async()=>{const h=await request('/health');$('mode').textContent=(h.agent_mode==='demo'?'规则演示':'真实模型')+' · '+(h.embedding_provider==='demo'?'演示向量':'模型向量')+' · Chroma';await start();});
+  </script>
+</body>
+</html>

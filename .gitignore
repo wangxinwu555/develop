@@ -1,0 +1,13 @@
+.venv/
+.buildtmp/
+.pytest_cache/
+.ruff_cache/
+.idea/
+pytest-cache-files-*/
+__pycache__/
+*.pyc
+*.egg-info/
+.env
+runtime/
+*.sqlite*
+evals/results*.json
